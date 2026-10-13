@@ -24,21 +24,29 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
+      - name: Configure Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: ''
 
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses
+      - name: Accept Android SDK licences
+        run: yes | sdkmanager --licenses || true
 
-      - name: Verify project files
+      - name: Check Android project
+        shell: bash
         run: |
+          set -e
+
+          echo "Checking project structure..."
+          ls -la
+
           if [ ! -f gradlew ]; then
             echo "ERROR: gradlew is missing from the repository root."
             exit 1
           fi
 
           if [ ! -d app ]; then
-            echo "ERROR: app folder is missing."
+            echo "ERROR: app directory is missing."
             exit 1
           fi
 
