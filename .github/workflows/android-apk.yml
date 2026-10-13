@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    name: Build and Test Android App
+    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
@@ -25,49 +25,33 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set Up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK Packages
-        run: |
-          sdkmanager "platform-tools"
-          sdkmanager "platforms;android-35"
-          sdkmanager "build-tools;35.0.0"
-
       - name: Locate Android Project
         run: |
-          echo "Checking repository structure..."
+          set -e
+          echo "Checking project structure..."
           ls -la
-          find . -maxdepth 4 \
-            \( -name gradlew -o -name build.gradle \
-            -o -name build.gradle.kts -o -name settings.gradle \
-            -o -name settings.gradle.kts \) -print
 
-      - name: Make Gradle Wrapper Executable
-        run: |
-          if [ -f ./gradlew ]; then
-            chmod +x ./gradlew
-          elif [ -f ./app/gradlew ]; then
-            chmod +x ./app/gradlew
+          if [ -f gradlew ]; then
+            echo "PROJECT_DIR=." >> "$GITHUB_ENV"
+          elif [ -f app/gradlew ]; then
+            echo "PROJECT_DIR=app" >> "$GITHUB_ENV"
           else
             echo "ERROR: Gradle wrapper not found."
+            find . -maxdepth 5 -type f | head -100
             exit 1
           fi
 
       - name: Build Debug APK
         run: |
-          if [ -f ./gradlew ]; then
-            ./gradlew assembleDebug --stacktrace
-          else
-            cd app
-            ./gradlew assembleDebug --stacktrace
-          fi
+          set -e
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Al-Noor-Professional-Zakat-Calculator
-          path: |
-            **/build/outputs/apk/debug/*.apk
+          name: Al-Noor-Professional-Zakat-Calculator-APK
+          path: '**/build/outputs/apk/debug/*.apk'
           if-no-files-found: error
           retention-days: 30
