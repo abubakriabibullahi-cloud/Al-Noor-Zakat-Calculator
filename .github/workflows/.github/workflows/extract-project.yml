@@ -40,8 +40,7 @@ jobs:
           \) -print -quit)"
 
           if [ -z "$PROJECT_SETTINGS" ]; then
-            echo "ERROR: No Gradle settings file found."
-            echo "The ZIP structure must be inspected."
+            echo "ERROR: No Gradle settings file found in the ZIP."
             exit 1
           fi
 
@@ -50,12 +49,6 @@ jobs:
           echo "Android project directory: $PROJECT_DIR"
 
           cp -a "$PROJECT_DIR"/. .
-
-          if [ ! -f gradlew ]; then
-            echo "WARNING: gradlew is still missing."
-            echo "The project may need a Gradle wrapper."
-            find . -maxdepth 3 -type f | head -100
-          fi
 
       - name: Commit extracted files
         shell: bash
