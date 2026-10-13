@@ -1,0 +1,75 @@
+name: Extract Al-Noor Android Project
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Extract Android project
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ZIP_FILE="AlNoorZakatCalculator_ProjectFiles (1).zip"
+
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "ERROR: Project ZIP not found."
+            exit 1
+          fi
+
+          mkdir -p /tmp/alnoor-project
+          unzip -q "$ZIP_FILE" -d /tmp/alnoor-project
+
+          echo "Files found inside ZIP:"
+          find /tmp/alnoor-project -maxdepth 4 -type f | head -100
+
+          PROJECT_SETTINGS="$(find /tmp/alnoor-project -type f \( \
+            -name settings.gradle -o \
+            -name settings.gradle.kts \
+          \) -print -quit)"
+
+          if [ -z "$PROJECT_SETTINGS" ]; then
+            echo "ERROR: No Gradle settings file found."
+            echo "The ZIP structure must be inspected."
+            exit 1
+          fi
+
+          PROJECT_DIR="$(dirname "$PROJECT_SETTINGS")"
+
+          echo "Android project directory: $PROJECT_DIR"
+
+          cp -a "$PROJECT_DIR"/. .
+
+          if [ ! -f gradlew ]; then
+            echo "WARNING: gradlew is still missing."
+            echo "The project may need a Gradle wrapper."
+            find . -maxdepth 3 -type f | head -100
+          fi
+
+      - name: Commit extracted files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Extract Android project source files"
+            git push origin HEAD:main
+          fi
