@@ -15,10 +15,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download repository files
+      - name: Checkout project
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -27,27 +27,27 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Check Android project
-        run: |
-          echo "Checking Android project files..."
-          ls -la
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses
 
+      - name: Verify project files
+        run: |
           if [ ! -f gradlew ]; then
             echo "ERROR: gradlew is missing from the repository root."
             exit 1
           fi
 
           if [ ! -d app ]; then
-            echo "ERROR: The app folder is missing."
+            echo "ERROR: app folder is missing."
             exit 1
           fi
 
-      - name: Build APK
-        run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
 
-      - name: Upload APK artifact
+      - name: Build debug APK
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Al-Noor-Zakat-Calculator-APK
