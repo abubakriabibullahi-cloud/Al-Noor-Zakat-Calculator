@@ -25,33 +25,40 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Locate Android Project
+      - name: Extract Android Project
         run: |
           set -e
-          echo "Checking project structure..."
-          ls -la
+          mkdir -p extracted
+          unzip -q -o "AlNoorZakatCalculator_Professional (4).zip" -d extracted
+          echo "ZIP extracted successfully"
+          find extracted -maxdepth 5 -type f | head -100
 
-          if [ -f gradlew ]; then
-            echo "PROJECT_DIR=." >> "$GITHUB_ENV"
-          elif [ -f app/gradlew ]; then
-            echo "PROJECT_DIR=app" >> "$GITHUB_ENV"
-          else
-            echo "ERROR: Gradle wrapper not found."
-            find . -maxdepth 5 -type f | head -100
+      - name: Locate Gradle Wrapper
+        run: |
+          set -e
+          WRAPPER=$(find "$GITHUB_WORKSPACE/extracted" -type f -name gradlew -print -quit)
+
+          if [ -z "$WRAPPER" ]; then
+            echo "ERROR: No gradlew file found inside the ZIP."
+            echo "Checking for Gradle build files..."
+            find extracted -type f \( -name build.gradle -o -name build.gradle.kts -o -name settings.gradle -o -name settings.gradle.kts \)
             exit 1
           fi
+
+          PROJECT_DIR=$(dirname "$WRAPPER")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          chmod +x "$WRAPPER"
 
       - name: Build Debug APK
         run: |
           set -e
           cd "$PROJECT_DIR"
-          chmod +x gradlew
           ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Al-Noor-Professional-Zakat-Calculator-APK
-          path: '**/build/outputs/apk/debug/*.apk'
+          path: extracted/**/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 30
