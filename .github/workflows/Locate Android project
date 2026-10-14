@@ -1,0 +1,37 @@
+- name: Extract and locate Android project
+        id: project
+        shell: bash
+        run: |
+          set -e
+
+          ZIP=$(find . -maxdepth 2 \
+            -type f -name 'AlNoorZakatCalculator_Professional*.zip' \
+            -print -quit)
+
+          if [ -n "$ZIP" ]; then
+            echo "Extracting project: $ZIP"
+            mkdir -p extracted
+            unzip -oq "$ZIP" -d extracted
+          fi
+
+          FILE=$(find . \
+            -name settings.gradle.kts \
+            -not -path '*/.gradle/*' \
+            -not -path '*/build/*' \
+            -print -quit)
+
+          if [ -z "$FILE" ]; then
+            echo "ERROR: Android project not found after extraction."
+            echo "Check that the ZIP contains settings.gradle.kts."
+            exit 1
+          fi
+
+          DIR=$(dirname "$FILE")
+
+          if [ ! -f "$DIR/app/build.gradle.kts" ]; then
+            echo "ERROR: app/build.gradle.kts was not found."
+            exit 1
+          fi
+
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "Project found: $DIR"
